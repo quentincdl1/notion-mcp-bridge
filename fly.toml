@@ -1,0 +1,66 @@
+# fly.toml app configuration file generated for notion-mcp-bridge on 2025-09-03T09:22:59+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'notion-mcp-bridge'
+primary_region = 'cdg'
+
+[build]
+
+[env]
+  OAUTH_PORT = '8081'
+  PORT = '8080'
+
+[[mounts]]
+  source = 'notion_mcp_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+  processes = ['app']
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [services.concurrency]
+    type = 'requests'
+    hard_limit = 50
+    soft_limit = 25
+
+  [[services.http_checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
+    protocol = 'http'
+    tls_skip_verify = false
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8081
+  processes = ['app']
+
+  [[services.ports]]
+    port = 8081
+    handlers = ['tls', 'http']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
